@@ -16,3 +16,6 @@
 
 - 代码编辑器：**Android Studio 2021.2.1**
 
+### 项目结构说明
+lib.prepare -> 错误案例
+lib.lib -> 正确实现
