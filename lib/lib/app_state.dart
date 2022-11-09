@@ -1,6 +1,11 @@
+import 'dart:io';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../demo/image_text/image_resizer.dart';
 import 'app_state_manager.dart';
 import 'formatting_toolbar.dart' show ToggleButtonsState;
 import 'replacements.dart';
@@ -140,7 +145,7 @@ class AppStateWidgetState extends State<AppStateWidget> {
     setState(() {});
   }
 
-  void updateToggleButtonsStateOnButtonPressed(int index) {
+  Future<void> updateToggleButtonsStateOnButtonPressed(int index) async {
     Map<int, TextStyle> attributeMap = const <int, TextStyle>{
       0: TextStyle(fontWeight: FontWeight.bold),
       1: TextStyle(fontStyle: FontStyle.italic),
@@ -149,7 +154,6 @@ class AppStateWidgetState extends State<AppStateWidget> {
 
     final ReplacementTextEditingController controller =
         _data.replacementsController;
-
     final TextRange replacementRange = TextRange(
       start: controller.selection.start,
       end: controller.selection.end,
@@ -186,6 +190,53 @@ class AppStateWidgetState extends State<AppStateWidget> {
       _data = _data.copyWith(replacementsController: controller);
       setState(() {});
     }
+  }
+
+  getImage(BuildContext context) async {
+    final ReplacementTextEditingController controller =
+        _data.replacementsController;
+    final TextRange replacementRange = TextRange(
+      start: controller.selection.start,
+      end: controller.selection.end,
+    );
+    File? image;
+    //默认尺寸
+    double width = 100.0;
+    double height = 100.0;
+    var getImage = await ImagePicker().pickImage(source: ImageSource.gallery);
+    image = File(getImage!.path);
+    controller.applyReplacement(
+      TextEditingInlineSpanReplacement(
+          replacementRange,
+          (string, range) => WidgetSpan(
+                  child: GestureDetector(
+                onTap: () {
+                  showCupertinoModalPopup<void>(
+                      context: context,
+                      builder: (context) {
+                        return ImageResizer(
+                            onImageResize: (w, h) {
+                                width = w;
+                                height = h;
+                            },
+                            imageWidth: width,
+                            imageHeight: height,
+                            maxWidth: MediaQuery.of(context).size.width * 0.5,
+                            maxHeight:
+                                MediaQuery.of(context).size.height * 0.5);
+                      });
+                },
+                child: Image.file(
+                  image!,
+                  width: width,
+                  height: height,
+                ),
+              )),
+          true,
+          isWidget: true),
+    );
+    _data = _data.copyWith(replacementsController: controller);
+    setState(() {});
   }
 
   @override

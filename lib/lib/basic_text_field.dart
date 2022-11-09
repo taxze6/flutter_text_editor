@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 import 'basic_text_input_client.dart';
+import 'replacements.dart';
 
 /// 基本TextField
 class BasicTextField extends StatefulWidget {
@@ -13,7 +14,7 @@ class BasicTextField extends StatefulWidget {
     required this.focusNode,
   });
 
-  final TextEditingController controller;
+  final ReplacementTextEditingController controller;
   final TextStyle style;
   final FocusNode focusNode;
 

@@ -81,6 +81,14 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
+
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          AppStateWidget.of(context)
+              .getImage(context);
+        },
+        child: const Icon(Icons.camera_alt),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Center(

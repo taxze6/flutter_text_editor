@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:math' as math;
 
@@ -14,7 +15,10 @@ class TextEditingInlineSpanReplacement {
 
   bool expand;
 
-  TextEditingInlineSpanReplacement(this.range, this.generator, this.expand);
+  bool? isWidget;
+
+  TextEditingInlineSpanReplacement(this.range, this.generator, this.expand,
+      {this.isWidget});
 
   TextEditingInlineSpanReplacement? onDelete(TextEditingDeltaDeletion delta) {
     final TextRange deletedRange = delta.deletedRange;
@@ -425,11 +429,12 @@ class ReplacementTextEditingController extends TextEditingController {
       for (final TextEditingInlineSpanReplacement replacement
           in replacements!) {
         _addToMappingWithOverlaps(
-          replacement.generator,
-          TextRange(start: replacement.range.start, end: replacement.range.end),
-          rangeSpanMapping,
-          value.text,
-        );
+            replacement.generator,
+            TextRange(
+                start: replacement.range.start, end: replacement.range.end),
+            rangeSpanMapping,
+            value.text,
+            isWidget: replacement.isWidget);
       }
     }
 
@@ -446,7 +451,6 @@ class ReplacementTextEditingController extends TextEditingController {
         );
       }, value.composing, rangeSpanMapping, value.text);
     }
-
     // 根据开始索引对匹配进行排序
     final List<TextRange> sortedRanges = rangeSpanMapping.keys.toList();
     sortedRanges.sort((a, b) => a.start.compareTo(b.start));
@@ -454,6 +458,7 @@ class ReplacementTextEditingController extends TextEditingController {
     // 为未替换的文本范围创建TextSpan并插入替换的span
     final List<InlineSpan> spans = <InlineSpan>[];
     int previousEndIndex = 0;
+
     for (final TextRange range in sortedRanges) {
       if (range.start > previousEndIndex) {
         spans.add(TextSpan(
@@ -477,12 +482,14 @@ class ReplacementTextEditingController extends TextEditingController {
       InlineSpanGenerator generator,
       TextRange matchedRange,
       Map<TextRange, InlineSpan> rangeSpanMapping,
-      String text) {
+      String text,
+      {bool? isWidget}) {
     // 在某些情况下，应该允许重叠。
     // 例如在两个TextSpan匹配相同的替换范围的情况下，
     // 尝试合并到一个TextStyle的风格，并建立一个新的TextSpan。
     bool overlap = false;
     List<TextRange> overlapRanges = <TextRange>[];
+    //遍历索引
     for (final TextRange range in rangeSpanMapping.keys) {
       if (math.max(matchedRange.start, range.start) <=
           math.min(matchedRange.end, range.end)) {
@@ -554,37 +561,40 @@ class ReplacementTextEditingController extends TextEditingController {
         endPoints.addAll(ends.toList());
       }
       endPoints.sort();
-      Map<int, Set<TextStyle>> start = <int, Set<TextStyle>>{};
-      Map<int, Set<TextStyle>> end = <int, Set<TextStyle>>{};
+      if (isWidget == true) {
+      } else {
+        Map<int, Set<TextStyle>> start = <int, Set<TextStyle>>{};
+        Map<int, Set<TextStyle>> end = <int, Set<TextStyle>>{};
 
-      for (final int e in endPoints) {
-        start[e] = <TextStyle>{};
-        end[e] = <TextStyle>{};
-      }
-
-      for (List<dynamic> triple in overlappingTriples) {
-        start[triple[0]]!.add(triple[2] as TextStyle);
-        end[triple[1]]!.add(triple[2] as TextStyle);
-      }
-
-      Set<TextStyle> styles = <TextStyle>{};
-      List<int> otherEndPoints =
-          endPoints.getRange(1, endPoints.length).toList();
-      for (int i = 0; i < endPoints.length - 1; i++) {
-        styles = styles.difference(end[endPoints[i]]!);
-        styles.addAll(start[endPoints[i]]!);
-        TextStyle? mergedStyles;
-        final TextRange uniqueRange =
-            TextRange(start: endPoints[i], end: otherEndPoints[i]);
-        for (final TextStyle style in styles) {
-          if (mergedStyles == null) {
-            mergedStyles = style;
-          } else {
-            mergedStyles = mergedStyles.merge(style);
-          }
+        for (final int e in endPoints) {
+          start[e] = <TextStyle>{};
+          end[e] = <TextStyle>{};
         }
-        rangeSpanMapping[uniqueRange] =
-            TextSpan(text: uniqueRange.textInside(text), style: mergedStyles);
+
+        for (List<dynamic> triple in overlappingTriples) {
+          start[triple[0]]!.add(triple[2] as TextStyle);
+          end[triple[1]]!.add(triple[2] as TextStyle);
+        }
+
+        Set<TextStyle> styles = <TextStyle>{};
+        List<int> otherEndPoints =
+            endPoints.getRange(1, endPoints.length).toList();
+        for (int i = 0; i < endPoints.length - 1; i++) {
+          styles = styles.difference(end[endPoints[i]]!);
+          styles.addAll(start[endPoints[i]]!);
+          TextStyle? mergedStyles;
+          final TextRange uniqueRange =
+              TextRange(start: endPoints[i], end: otherEndPoints[i]);
+          for (final TextStyle style in styles) {
+            if (mergedStyles == null) {
+              mergedStyles = style;
+            } else {
+              mergedStyles = mergedStyles.merge(style);
+            }
+          }
+          rangeSpanMapping[uniqueRange] =
+              TextSpan(text: uniqueRange.textInside(text), style: mergedStyles);
+        }
       }
     }
 
@@ -637,28 +647,32 @@ class ReplacementTextEditingController extends TextEditingController {
     final List<TextStyle> stylesAtSelection = <TextStyle>[];
 
     for (final TextEditingInlineSpanReplacement replacement in replacements!) {
-      if (selection.isCollapsed) {
-        if (math.max(replacement.range.start, selection.start) <=
-            math.min(replacement.range.end, selection.end)) {
-          if (selection.end != replacement.range.start) {
-            if (selection.start == replacement.range.end) {
-              if (replacement.expand) {
+      if (replacement.isWidget == true) {
+
+      } else {
+        if (selection.isCollapsed) {
+          if (math.max(replacement.range.start, selection.start) <=
+              math.min(replacement.range.end, selection.end)) {
+            if (selection.end != replacement.range.start) {
+              if (selection.start == replacement.range.end) {
+                if (replacement.expand) {
+                  stylesAtSelection
+                      .add(replacement.generator('', replacement.range).style!);
+                }
+              } else {
                 stylesAtSelection
                     .add(replacement.generator('', replacement.range).style!);
               }
-            } else {
+            }
+          }
+        } else {
+          if (math.max(replacement.range.start, selection.start) <=
+              math.min(replacement.range.end, selection.end)) {
+            if (replacement.range.start <= selection.start &&
+                replacement.range.end >= selection.end) {
               stylesAtSelection
                   .add(replacement.generator('', replacement.range).style!);
             }
-          }
-        }
-      } else {
-        if (math.max(replacement.range.start, selection.start) <=
-            math.min(replacement.range.end, selection.end)) {
-          if (replacement.range.start <= selection.start &&
-              replacement.range.end >= selection.end) {
-            stylesAtSelection
-                .add(replacement.generator('', replacement.range).style!);
           }
         }
       }

@@ -8,6 +8,7 @@ enum ToggleButtonsState {
   bold,
   italic,
   underline,
+  image,
 }
 
 class FormattingToolbar extends StatelessWidget {

@@ -15,7 +15,7 @@ typedef SelectionChangedCallback = void Function(
 
 /// DeltaTextInputClient的基础实现
 class BasicTextInputClient extends StatefulWidget {
-  final TextEditingController controller;
+  final ReplacementTextEditingController controller;
   final TextStyle style;
   final FocusNode focusNode;
   final TextSelectionControls? selectionControls;
@@ -189,7 +189,7 @@ class BasicTextInputClientState extends State<BasicTextInputClient>
   }
 
   ///返回TextSpan
-  TextSpan _buildTextSpan() {
+  InlineSpan _buildTextSpan() {
     return widget.controller.buildTextSpan(
       context: context,
       style: widget.style,
